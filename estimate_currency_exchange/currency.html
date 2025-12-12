@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>💰 Money Manager — Improved UI</title>
+<style>
+  :root{
+    --bg-1: linear-gradient(135deg,#0f172a 0%, #0b1220 100%);
+    --card-bg: linear-gradient(180deg,#ffffffee,#f7f9fc);
+    --accent: #2563eb;          /* blue */
+    --accent-2: #06b6d4;        /* teal */
+    --accent-3: #f59e0b;        /* amber */
+    --muted: #6b7280;
+    --radius: 14px;
+    --glass: rgba(255,255,255,0.06);
+  }
+
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: var(--bg-1);
+    color:#0f172a;
+    -webkit-font-smoothing:antialiased;
+    padding:28px;
+  }
+
+  .wrap{
+    max-width:1200px;
+    margin:0 auto;
+  }
+
+  .brand {
+    display:flex;
+    align-items:center;
+    gap:16px;
+    color:#fff;
+    margin-bottom:18px;
+  }
+  .logo {
+    width:52px;height:52px;border-radius:12px;
+    background:linear-gradient(135deg,var(--accent),#6d28d9);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:20px;
+    box-shadow:0 6px 20px rgba(2,6,23,0.6);
+  }
+  h1{font-size:20px;color:#fff}
+  p.lead{color:#cfe8ff;margin-top:6px;font-size:13px}
+
+  /* outer container card */
+  .app {
+    background: linear-gradient(180deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+    border-radius:20px;
+    padding:18px;
+    box-shadow: 0 12px 30px rgba(2,6,23,0.6);
+    border: 1px solid rgba(255,255,255,0.04);
+  }
+
+  /* tabs */
+  .tabs { display:flex; gap:8px; margin:18px 0 20px; }
+  .tab {
+    background:transparent; color:#dbeafe; border:1px solid rgba(255,255,255,0.06);
+    padding:10px 14px; border-radius:12px; cursor:pointer; font-weight:600;
+  }
+  .tab.active {
+    background: linear-gradient(90deg,var(--accent),#4f46e5);
+    color:white; box-shadow:0 8px 20px rgba(37,99,235,0.18);
+  }
+
+  /* tab content */
+  .tab-panel{ display:none; padding-top:10px; }
+  .tab-panel.active{ display:block; }
+
+  /* three-column layout */
+  .grid-3{
+    display:grid;
+    grid-template-columns: repeat(3,1fr);
+    gap:18px;
+    align-items:start;
+  }
+
+  /* card inside grid */
+  .card {
+    background: var(--card-bg);
+    border-radius: var(--radius);
+    padding:16px;
+    box-shadow: 0 8px 22px rgba(2,6,23,0.08);
+    border:1px solid rgba(2,6,23,0.04);
+    min-height:150px;
+  }
+  .card h3{font-size:16px;margin-bottom:12px;color:#0f172a}
+  .muted{color:var(--muted);font-size:13px;margin-top:8px}
+
+  /* inputs/buttons */
+  .field { margin-bottom:10px; }
+  input[type="text"], input[type="number"], input[type="date"], select {
+    width:100%; padding:10px 12px; border-radius:10px; border:1px solid #e6eef8;
+    font-size:14px; background:white;
+  }
+  .btn {
+    display:inline-block; padding:10px 14px; border-radius:10px; cursor:pointer;
+    font-weight:700; border:none; color:white;
+  }
+  .btn.primary{ background: linear-gradient(90deg,var(--accent),#4f46e5); }
+  .btn.secondary{ background: linear-gradient(90deg,var(--accent-2),#0891b2); }
+  .btn.warn{ background: linear-gradient(90deg,var(--accent-3),#d97706); color:#06202a;}
+  .btn.ghost{ background:transparent; color:var(--accent); border:1px solid rgba(37,99,235,0.12); }
+
+  /* currency list simple style */
+  .currency-list { display:flex; flex-direction:column; gap:8px; max-height:320px; overflow:auto; padding-right:6px }
+  .currency-row {
+    display:flex; justify-content:space-between; align-items:center; gap:8px;
+    padding:8px; border-radius:8px; background:linear-gradient(180deg,#ffffff,#fbfdff);
+    border:1px solid rgba(2,6,23,0.03);
+  }
+  .currency-row small{ color:var(--muted); }
+
+  /* inventory grid */
+  .inventory-grid{
+    display:grid; grid-template-columns: repeat(4,1fr); gap:10px;
+  }
+  .note {
+    background: linear-gradient(180deg,#fff,#f7fff7);
+    border-radius:10px; padding:8px; text-align:center; border:1px solid rgba(2,6,23,0.03);
+  }
+  .note .denom { font-weight:800; color:#083344; }
+  .note .count { font-size:20px; color:#064e3b; margin-top:6px }
+
+  /* history table */
+  .history { width:100%; border-collapse:collapse; margin-top:6px; font-size:13px }
+  .history th, .history td { padding:8px; border-bottom:1px solid rgba(2,6,23,0.04); text-align:center }
+  .history th { background: rgba(255,255,255,0.03); color:#e6f0ff; font-weight:700 }
+
+  /* statuses */
+  .status { padding:8px 10px; border-radius:10px; font-weight:700; display:inline-block; font-size:14px;}
+  .status.good{ background: #ecfeff; color:#064e3b; border:1px solid rgba(6,78,59,0.08); }
+  .status.bad{ background:#fff1f2; color:#6b021b; border:1px solid rgba(107,2,27,0.06); }
+
+  /* small helpers */
+  .flex { display:flex; gap:12px; align-items:center; }
+  .right { margin-left:auto; }
+  .text-muted { color:var(--muted); font-size:13px; }
+
+  /* responsive */
+  @media (max-width:1024px){
+    .grid-3{ grid-template-columns: repeat(2,1fr); }
+    .inventory-grid{ grid-template-columns: repeat(3,1fr); }
+  }
+  @media (max-width:680px){
+    .grid-3{ grid-template-columns: 1fr; }
+    .inventory-grid{ grid-template-columns: repeat(2,1fr); }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="brand">
+      <div class="logo">MM</div>
+      <div>
+        <h1>Money Manager</h1>
+        <p class="lead">Currencies • Inventory • Tax & Split — redesigned</p>
+      </div>
+    </div>
+
+    <div class="app">
+
+      <!-- tabs -->
+      <div class="tabs" role="tablist" aria-label="Main Tabs">
+        <button class="tab active" data-tab="currencies" onclick="switchTab(event,'currencies')">💱 Currencies</button>
+        <button class="tab" data-tab="manager" onclick="switchTab(event,'manager')">📊 Manager</button>
+      </div>
+
+      <!-- CURRENCIES PANEL -->
+      <div id="currencies" class="tab-panel active">
+        <div class="grid-3">
+          <!-- Add Currency -->
+          <div class="card">
+            <h3>➕ Add / Edit Currency</h3>
+            <div class="field">
+              <label class="text-muted">Code</label>
+              <input id="currencyCode" type="text" placeholder="e.g., JPY" />
+            </div>
+            <div class="field">
+              <label class="text-muted">Rate vs USD</label>
+              <input id="currencyRate" type="number" step="0.0001" placeholder="e.g., 0.0075" />
+            </div>
+            <div class="flex">
+              <button class="btn primary" onclick="addOrUpdateCurrency()">Save</button>
+              <button class="btn ghost" onclick="resetCurrencyForm()">Reset</button>
+            </div>
+            <div style="margin-top:10px" class="muted">Add currency codes and their rate relative to USD. Example: INR ~ 83.00</div>
+          </div>
+
+          <!-- Currency List -->
+          <div class="card">
+            <h3>💱 Currency List</h3>
+            <div class="currency-list" id="currencyList"></div>
+            <div style="margin-top:10px" class="flex">
+              <div class="text-muted">Total: <span id="currencyCount">0</span></div>
+              <div class="right">
+                <button class="btn secondary" onclick="loadDefaultRates()">Load Defaults</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Convert Quick -->
+          <div class="card">
+            <h3>🔁 Quick Convert</h3>
+            <div class="field"><label class="text-muted">From</label>
+              <select id="convertFrom"></select></div>
+            <div class="field"><label class="text-muted">To</label>
+              <select id="convertTo"></select></div>
+            <div class="field"><label class="text-muted">Amount</label>
+              <input id="convertAmount" type="number" placeholder="Amount" /></div>
+            <div class="flex">
+              <button class="btn primary" onclick="doConvert()">Convert</button>
+              <button class="btn ghost" onclick="clearConvert()">Clear</button>
+            </div>
+            <div id="convertResult" style="margin-top:12px;font-weight:800;color:var(--accent)"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MANAGER PANEL -->
+      <div id="manager" class="tab-panel" aria-hidden="true">
+        <div class="grid-3">
+          <!-- Inventory -->
+          <div class="card">
+            <h3>💵 Note Inventory</h3>
+            <div class="inventory-grid" id="inventoryGrid"></div>
+            <div style="margin-top:12px" class="flex">
+              <button class="btn secondary" onclick="promptInventory()">Update Inventory</button>
+              <button class="btn ghost" onclick="resetInventory()">Reset</button>
+            </div>
+            <div class="muted" style="margin-top:10px">Click update to enter available counts for each denomination.</div>
+          </div>
+
+          <!-- Tax Calculator -->
+          <div class="card">
+            <h3>💱 Tax Calculator</h3>
+            <div class="field"><label class="text-muted">Tax %</label>
+              <input id="taxRate" type="number" step="0.1" /></div>
+
+            <div class="field">
+              <label class="text-muted">Amount</label>
+              <input id="taxAmount" type="number" placeholder="Amount in selected currency" />
+            </div>
+
+            <div class="field">
+              <label class="text-muted">From</label>
+              <select id="taxFrom"></select>
+            </div>
+
+            <div class="field">
+              <label class="text-muted">To</label>
+              <select id="taxTo"></select>
+            </div>
+
+            <div class="flex" style="margin-top:6px">
+              <button class="btn primary" onclick="calculateTax()">Calculate & Prepare Split</button>
+              <button class="btn ghost" onclick="saveTaxRate()">Save Tax</button>
+            </div>
+
+            <div id="taxSummary" style="margin-top:10px"></div>
+          </div>
+
+          <!-- Split Notes -->
+          <div class="card">
+            <h3>✂️ Split Notes</h3>
+            <div class="field">
+              <label class="text-muted">Total (INR)</label>
+              <input id="splitAmount" type="number" readonly />
+            </div>
+
+            <div id="splitPreview" class="muted"></div>
+            <div style="margin-top:12px" class="flex">
+              <button class="btn primary" id="splitBtn" onclick="confirmSplit()" disabled>Confirm Split</button>
+              <button class="btn warn" onclick="forceSplit()">Force Split</button>
+            </div>
+            <div id="splitResult" style="margin-top:10px"></div>
+          </div>
+        </div>
+
+        <!-- Transactions / Customer -->
+        <div style="margin-top:18px" class="card">
+          <div class="flex">
+            <div>
+              <h3 style="margin:0">📋 Recent Transactions</h3>
+              <div class="text-muted">Last 20 transactions (localStorage)</div>
+            </div>
+            <div class="right">
+              <button class="btn ghost" onclick="clearTransactions()">Clear All</button>
+            </div>
+          </div>
+
+          <div style="margin-top:12px; overflow:auto">
+            <table class="history" id="historyTable">
+              <thead>
+                <tr><th>Name</th><th>Amount</th><th>2K</th><th>500</th><th>200</th><th>100</th><th>50</th><th>10</th><th>5</th><th>Time</th></tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+<script>
+/* -------------------------
+   Data & defaults
+   -------------------------*/
+let rates = JSON.parse(localStorage.getItem('mm_rates')) || {USD:1, INR:83, EUR:0.92, GBP:0.79};
+let inventory = JSON.parse(localStorage.getItem('mm_inventory')) || {2000:10,500:20,200:30,100:50,50:40,10:100,5:200};
+let transactions = JSON.parse(localStorage.getItem('mm_transactions')) || [];
+let taxRate = parseFloat(localStorage.getItem('mm_tax')) || 18;
+const notes = [2000,500,200,100,50,10,5];
+
+/* -------------------------
+   Initialization
+   -------------------------*/
+function init(){
+  renderCurrencyList();
+  populateConvertDropdowns();
+  renderInventory();
+  document.getElementById('taxRate').value = taxRate;
+  populateTaxDropdowns();
+  renderHistory();
+}
+init();
+
+/* -------------------------
+   Tabs
+   -------------------------*/
+function switchTab(e, id){
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  e.currentTarget.classList.add('active');
+  document.querySelectorAll('.tab-panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  // accessibility
+  document.querySelectorAll('.tab-panel').forEach(p=>p.setAttribute('aria-hidden','true'));
+  document.getElementById(id).setAttribute('aria-hidden','false');
+}
+
+/* -------------------------
+   Currency functions
+   -------------------------*/
+function addOrUpdateCurrency(){
+  const codeEl = document.getElementById('currencyCode');
+  const rateEl = document.getElementById('currencyRate');
+  const code = (codeEl.value || '').trim().toUpperCase();
+  const rate = parseFloat(rateEl.value);
+  if(!code || isNaN(rate) || rate <= 0){
+    alert('Enter a valid code and rate.');
+    return;
+  }
+  rates[code] = rate;
+  saveRates();
+  renderCurrencyList();
+  populateConvertDropdowns();
+  populateTaxDropdowns();
+  codeEl.value = ''; rateEl.value = '';
+}
+function resetCurrencyForm(){ document.getElementById('currencyCode').value=''; document.getElementById('currencyRate').value=''; }
+function renderCurrencyList(){
+  const container = document.getElementById('currencyList');
+  container.innerHTML = '';
+  const entries = Object.entries(rates).sort();
+  entries.forEach(([code,rate])=>{
+    const row = document.createElement('div');
+    row.className = 'currency-row';
+    row.innerHTML = `
+      <div>
+        <div style="font-weight:800">${code}</div>
+        <small>1 USD = ${ (code==='USD' ? 1 : (1/rate).toFixed(6)) } ${code}</small>
+      </div>
+      <div class="flex">
+        <div style="text-align:right;margin-right:8px;"><strong>${rate}</strong></div>
+        <div>
+          <button class="btn ghost" onclick="editCurrency('${code}')">Edit</button>
+          <button class="btn warn" onclick="deleteCurrency('${code}')">Delete</button>
+        </div>
+      </div>
+    `;
+    container.appendChild(row);
+  });
+  document.getElementById('currencyCount').innerText = entries.length;
+}
+function editCurrency(code){
+  const rate = rates[code];
+  const newRate = prompt(`New rate for ${code} (vs USD):`, rate);
+  if(newRate && !isNaN(parseFloat(newRate))){
+    rates[code] = parseFloat(newRate);
+    saveRates(); renderCurrencyList(); populateConvertDropdowns(); populateTaxDropdowns();
+  }
+}
+function deleteCurrency(code){
+  if(!confirm(`Delete currency ${code}?`)) return;
+  delete rates[code];
+  saveRates(); renderCurrencyList(); populateConvertDropdowns(); populateTaxDropdowns();
+}
+function saveRates(){ localStorage.setItem('mm_rates', JSON.stringify(rates)); }
+function loadDefaultRates(){
+  rates = {USD:1, INR:83, EUR:0.92, GBP:0.79, JPY:0.0068};
+  saveRates(); renderCurrencyList(); populateConvertDropdowns(); populateTaxDropdowns();
+}
+
+/* Convert dropdowns */
+function populateConvertDropdowns(){
+  const from = document.getElementById('convertFrom');
+  const to = document.getElementById('convertTo');
+  from.innerHTML=''; to.innerHTML='';
+  Object.keys(rates).forEach(k=>{
+    from.innerHTML += `<option value="${k}">${k}</option>`;
+    to.innerHTML += `<option value="${k}">${k}</option>`;
+  });
+  // default selections
+  if(Object.keys(rates).includes('USD')) from.value='USD';
+  if(Object.keys(rates).includes('INR')) to.value='INR';
+}
+function doConvert(){
+  const from = document.getElementById('convertFrom').value;
+  const to = document.getElementById('convertTo').value;
+  const amount = parseFloat(document.getElementById('convertAmount').value);
+  if(!from || !to || !amount || isNaN(amount)){ alert('Enter amount and select currencies'); return; }
+  // convert via USD: amount_in_usd = amount / rates[from]; result = amount_in_usd * rates[to]
+  const result = (amount / rates[from]) * rates[to];
+  document.getElementById('convertResult').innerText = `${amount} ${from} ≈ ${result.toFixed(2)} ${to}`;
+}
+function clearConvert(){ document.getElementById('convertAmount').value=''; document.getElementById('convertResult').innerText=''; }
+
+/* -------------------------
+   Inventory
+   -------------------------*/
+function renderInventory(){
+  const grid = document.getElementById('inventoryGrid');
+  grid.innerHTML = '';
+  notes.forEach(n=>{
+    const node = document.createElement('div');
+    node.className = 'note';
+    node.innerHTML = `<div class="denom">₹${n}</div><div class="count">${inventory[n]||0}</div>`;
+    grid.appendChild(node);
+  });
+}
+function promptInventory(){
+  notes.forEach(n=>{
+    const current = inventory[n] || 0;
+    const value = prompt(`Enter count for ₹${n} (current: ${current}):`, current);
+    inventory[n] = Math.max(0, parseInt(value) || 0);
+  });
+  localStorage.setItem('mm_inventory', JSON.stringify(inventory));
+  renderInventory();
+}
+function resetInventory(){
+  inventory = {2000:0,500:0,200:0,100:0,50:0,10:0,5:0};
+  localStorage.setItem('mm_inventory', JSON.stringify(inventory));
+  renderInventory();
+}
+
+/* -------------------------
+   Tax & Split
+   -------------------------*/
+function populateTaxDropdowns(){
+  const from = document.getElementById('taxFrom');
+  const to = document.getElementById('taxTo');
+  from.innerHTML = ''; to.innerHTML = '';
+  Object.keys(rates).forEach(k=>{
+    from.innerHTML += `<option value="${k}">${k}</option>`;
+    to.innerHTML += `<option value="${k}">${k}</option>`;
+  });
+  if(Object.keys(rates).includes('USD')) from.value='USD';
+  if(Object.keys(rates).includes('INR')) to.value='INR';
+}
+function saveTaxRate(){
+  taxRate = parseFloat(document.getElementById('taxRate').value) || 0;
+  localStorage.setItem('mm_tax', taxRate);
+  alert('Tax saved: ' + taxRate + '%');
+}
+function calculateTax(){
+  const amount = parseFloat(document.getElementById('taxAmount').value);
+  const from = document.getElementById('taxFrom').value;
+  const to = document.getElementById('taxTo').value;
+  if(isNaN(amount) || !from || !to){ alert('Enter amount and select currencies'); return; }
+
+  // convert amount -> toCurrency
+  const converted = (amount / rates[from]) * rates[to];
+  const tax = converted * (taxRate/100);
+  const total = Math.round(converted + tax);
+
+  document.getElementById('taxSummary').innerHTML = `
+    <div class="status good">Converted: ${converted.toFixed(2)} ${to}</div>
+    <div style="margin-top:8px" class="status good">Tax (${taxRate}%): ${tax.toFixed(2)} ${to}</div>
+    <div style="margin-top:8px" class="status good">Total: ${total} ${to}</div>
+  `;
+  // show split target (we store split amount in INR — convert if target is not INR)
+  let totalInINR = total;
+  if(to !== 'INR'){
+    totalInINR = Math.round((total / rates[to]) * rates['INR'] || total);
+  }
+  document.getElementById('splitAmount').value = totalInINR;
+  // preview split
+  previewSplit(totalInINR);
+}
+
+/* Create preview of split using available inventory */
+function previewSplit(amount){
+  let remaining = amount;
+  let preview = '';
+  notes.forEach(n=>{
+    const avail = inventory[n] || 0;
+    const need = Math.floor(remaining / n);
+    const use = Math.min(avail, need);
+    if(use>0){
+      preview += `₹${n} × ${use} (avail ${avail})\n`;
+      remaining -= use * use ? n*use : 0;
+    }
+  });
+  // Alternative safer implementation to avoid the bug above:
+  // recompute properly:
+  remaining = amount;
+  preview = '';
+  notes.forEach(n=>{
+    const avail = inventory[n] || 0;
+    const need = Math.floor(remaining / n);
+    const use = Math.min(avail, need);
+    if(use>0){
+      preview += `₹${n} × ${use} (avail ${avail})\n`;
+      remaining -= n * use;
+    }
+  });
+
+  const previewEl = document.getElementById('splitPreview');
+  if(remaining === 0){
+    previewEl.innerText = preview + '\nPerfect split ✅';
+    document.getElementById('splitBtn').disabled = false;
+  } else {
+    previewEl.innerText = preview + `\nShortfall: ₹${remaining} ❌`;
+    document.getElementById('splitBtn').disabled = true;
+  }
+}
+
+/* Confirm split: deduct notes and record transaction */
+function confirmSplit(){
+  const amt = parseInt(document.getElementById('splitAmount').value);
+  if(!amt || isNaN(amt)){ alert('No split amount prepared'); return; }
+  let remaining = amt;
+  const used = {};
+  notes.forEach(n=>{
+    const need = Math.floor(remaining / n);
+    const take = Math.min(need, inventory[n] || 0);
+    if(take>0){
+      used[n] = take;
+      inventory[n] -= take;
+      remaining -= n * take;
+    }
+  });
+  if(remaining !== 0){
+    alert('Not enough notes to complete exact split. Use Force Split if you want to perform best-effort.');
+    return;
+  }
+  saveInventoryAndRecord(amt, used);
+  document.getElementById('splitResult').innerHTML = `<div class="status good">Split OK: ₹${amt}</div>`;
+  document.getElementById('splitBtn').disabled = true;
+  renderInventory(); renderHistory();
+}
+
+/* Force split: use greedy algorithm even if shortfall */
+function forceSplit(){
+  const amt = parseInt(document.getElementById('splitAmount').value) || 0;
+  if(!amt){ alert('No split amount prepared'); return; }
+  let remaining = amt;
+  const used = {};
+  notes.forEach(n=>{
+    const need = Math.floor(remaining / n);
+    const take = Math.min(need, inventory[n] || 0);
+    if(take>0){
+      used[n] = take;
+      inventory[n] -= take;
+      remaining -= n * take;
+    }
+  });
+  saveInventoryAndRecord(amt - remaining, used); // record the amount actually split
+  document.getElementById('splitResult').innerHTML = `<div class="status bad">Forced split: ₹${amt - remaining} (short by ₹${remaining})</div>`;
+  renderInventory(); renderHistory();
+}
+
+/* Save inventory and transaction */
+function saveInventoryAndRecord(amount, notesUsed){
+  localStorage.setItem('mm_inventory', JSON.stringify(inventory));
+  const trans = {
+    name: 'Customer',
+    amount,
+    notes: notesUsed,
+    time: new Date().toLocaleString()
+  };
+  transactions.unshift(trans);
+  if(transactions.length > 200) transactions.pop();
+  localStorage.setItem('mm_transactions', JSON.stringify(transactions));
+}
+
+/* -------------------------
+   Transactions / History
+   -------------------------*/
+function renderHistory(){
+  const tbody = document.querySelector('#historyTable tbody');
+  tbody.innerHTML = '';
+  transactions.slice(0, 50).forEach(t=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${t.name}</td>
+      <td>₹${t.amount}</td>
+      <td>${t.notes[2000]||0}</td>
+      <td>${t.notes[500]||0}</td>
+      <td>${t.notes[200]||0}</td>
+      <td>${t.notes[100]||0}</td>
+      <td>${t.notes[50]||0}</td>
+      <td>${t.notes[10]||0}</td>
+      <td>${t.notes[5]||0}</td>
+      <td>${t.time}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+function clearTransactions(){
+  if(!confirm('Clear all transactions?')) return;
+  transactions = [];
+  localStorage.setItem('mm_transactions', JSON.stringify([]));
+  renderHistory();
+}
+
+/* -------------------------
+   Utilities
+   -------------------------*/
+function saveInventory(){ localStorage.setItem('mm_inventory', JSON.stringify(inventory)); }
+function renderInventory(){ // already defined above but safe to re-call
+  const grid = document.getElementById('inventoryGrid');
+  grid.innerHTML = '';
+  notes.forEach(n=>{
+    const node = document.createElement('div');
+    node.className = 'note';
+    node.innerHTML = `<div class="denom">₹${n}</div><div class="count">${inventory[n]||0}</div>`;
+    grid.appendChild(node);
+  });
+}
+function populateTaxDropdowns(){ populateTaxDropdownsInner(); }
+function populateTaxDropdownsInner(){
+  const from = document.getElementById('taxFrom');
+  const to = document.getElementById('taxTo');
+  from.innerHTML=''; to.innerHTML='';
+  Object.keys(rates).forEach(k=>{
+    from.innerHTML += `<option value="${k}">${k}</option>`;
+    to.innerHTML += `<option value="${k}">${k}</option>`;
+  });
+  if(Object.keys(rates).includes('USD')) from.value='USD';
+  if(Object.keys(rates).includes('INR')) to.value='INR';
+}
+
+/* initialize UI dropdowns when rates change */
+function populateTaxDropdowns(){ populateTaxDropdownsInner(); }
+function populateConvertDropdowns(){ populateConvertDropdowns(); }
+function populateConvertDropdowns(){
+  const from = document.getElementById('convertFrom');
+  const to = document.getElementById('convertTo');
+  from.innerHTML=''; to.innerHTML='';
+  Object.keys(rates).forEach(k=>{
+    from.innerHTML += `<option value="${k}">${k}</option>`;
+    to.innerHTML += `<option value="${k}">${k}</option>`;
+  });
+  if(Object.keys(rates).includes('USD')) from.value='USD';
+  if(Object.keys(rates).includes('INR')) to.value='INR';
+}
+
+/* Fix for earlier preview bug already used above in previewSplit */
+
+init(); // ensure everything rendered
+</script>
+</body>
+</html>

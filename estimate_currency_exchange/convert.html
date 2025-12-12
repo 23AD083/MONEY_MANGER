@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Currency Converter</title>
+
+    <style>
+        body { 
+            font-family: Arial; 
+            background: #f2f2f2; 
+            padding: 30px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 20px;
+        }
+        .box { 
+            background: #fff; 
+            padding: 25px; 
+            border-radius: 10px; 
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            flex: 1;
+        }
+        input, select, button { 
+            width: 100%; 
+            padding: 12px; 
+            margin-top: 10px; 
+            border: 1px solid #ccc; 
+            border-radius: 5px; 
+        }
+        button { 
+            background: #007bff; 
+            color: white; 
+            font-size: 16px; 
+            cursor: pointer; 
+        }
+        button:hover { background: #0056b3; }
+        .converter-btn, .notes-btn {
+            background: green;
+            margin-top: 15px;
+        }
+        h2, h3 { text-align: center; }
+        .currency-item {
+            background: #f7f7f7;
+            padding: 12px;
+            border-radius: 6px;
+            margin-top: 10px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+        }
+        .result-line {
+            margin-top: 8px;
+            padding: 10px;
+            background: #e6e6e6;
+            border-radius: 5px;
+        }
+        .notes-result h3 {
+            margin-top: 0;
+            color: #333;
+        }
+        a { 
+            display: block; 
+            margin-top: 15px; 
+            text-align: center; 
+            color: #007bff;
+            text-decoration: none;
+        }
+        a:hover { text-decoration: underline; }
+        @media (max-width: 768px) {
+            .container { flex-direction: column; }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <!-- CURRENCY CONVERTER SECTION -->
+        <div class="box">
+            <h2>💱 Currency Converter</h2>
+            
+            <input type="number" id="amount" placeholder="Enter Amount">
+            <select id="from"></select>
+            <select id="to"></select>
+            
+            <button onclick="convert()">Convert →</button>
+            
+            <h3 id="result" style="color: #28a745; font-size: 18px;"></h3>
+            
+            <a href="add.html">➕ Add Currency</a>
+        </div>
+
+        <!-- AVAILABLE CURRENCIES & MONEY NOTES SECTION -->
+        <div class="box">
+            <h2>💰 Available Currencies</h2>
+            <div id="currencyList"></div>
+            
+            <h3 style="margin-top: 25px;">💵 Split Money Notes</h3>
+            <input type="number" id="demoAmount" placeholder="Enter total cash (e.g., 2750)">
+            <button class="notes-btn" onclick="showNotes()">Split Notes</button>
+            
+            <div id="notesList" class="notes-result"></div>
+        </div>
+    </div>
+
+    <script>
+        // Load saved currencies
+        let rates = JSON.parse(localStorage.getItem("rates")) || {
+            "USD": 1,
+            "INR": 83,
+            "EUR": 0.92,
+            "GBP": 0.79
+        };
+
+        // Render available currencies list
+        function renderCurrencies() {
+            const list = document.getElementById("currencyList");
+            list.innerHTML = "";
+
+            for (let c in rates) {
+                list.innerHTML += `
+                    <div class="currency-item">
+                        <strong>${c}</strong> — Rate: ${rates[c].toFixed(4)}
+                    </div>
+                `;
+            }
+        }
+
+        // Load dropdowns for converter
+        function loadDropdowns() {
+            let from = document.getElementById("from");
+            let to = document.getElementById("to");
+
+            from.innerHTML = '<option value="">Select Currency</option>';
+            to.innerHTML = '<option value="">Select Currency</option>';
+
+            for (let c in rates) {
+                from.innerHTML += `<option value="${c}">${c}</option>`;
+                to.innerHTML += `<option value="${c}">${c}</option>`;
+            }
+        }
+
+        // Currency conversion
+        function convert() {
+            const amount = parseFloat(document.getElementById("amount").value);
+            const from = document.getElementById("from").value;
+            const to = document.getElementById("to").value;
+            const result = document.getElementById("result");
+
+            if (!amount || !from || !to) {
+                result.innerText = "Please enter amount and select currencies!";
+                result.style.color = "#dc3545";
+                return;
+            }
+
+            const usdValue = amount / rates[from];
+            const finalValue = usdValue * rates[to];
+
+            result.innerHTML = `
+                <strong>${amount.toLocaleString()} ${from} = ${finalValue.toLocaleString('en-US', {maximumFractionDigits: 2})} ${to}</strong>
+            `;
+            result.style.color = "#28a745";
+        }
+
+        // Split amount into currency notes (Indian Rupees)
+        function showNotes() {
+            let amount = parseInt(document.getElementById("demoAmount").value);
+            let box = document.getElementById("notesList");
+
+            if (!amount || amount <= 0) {
+                box.innerHTML = '<div style="color: red;">Enter a valid amount!</div>';
+                return;
+            }
+
+            let notes = [2000, 500, 200, 100, 50, 20, 10, 5];
+            let resultHTML = "";
+            let totalNotes = 0;
+            let remaining = amount;
+
+            resultHTML += `<h3>₹${amount.toLocaleString('en-IN')}</h3>`;
+
+            notes.forEach(note => {
+                let count = Math.floor(remaining / note);
+                if (count > 0) {
+                    totalNotes += count;
+                    remaining = remaining % note;
+
+                    resultHTML += `
+                        <div class="result-line">
+                            ₹${note.toLocaleString('en-IN')} × ${count} = <strong>₹${(note * count).toLocaleString('en-IN')}</strong>
+                        </div>
+                    `;
+                }
+            });
+
+            resultHTML += `
+                <div class="result-line" style="background: #d4edda; border: 1px solid #c3e6cb;">
+                    <strong>Total Notes: ${totalNotes}</strong>
+                </div>
+            `;
+
+            if (remaining > 0) {
+                resultHTML += `
+                    <div class="result-line" style="background:#f8d7da; color:#721c24; border:1px solid #f5c6cb;">
+                        ⚠️ Remaining: <strong>₹${remaining.toLocaleString('en-IN')}</strong> (needs coins)
+                    </div>
+                `;
+            }
+
+            box.innerHTML = resultHTML;
+        }
+
+        // Initialize page
+        renderCurrencies();
+        loadDropdowns();
+    </script>
+</body>
+</html>
